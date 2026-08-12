@@ -1,0 +1,7 @@
+# actionlint configuration
+# Declares the custom self-hosted runner label used by the deploy job in
+# msbuild-dotnet.yml (migrated from the original Jenkins Windows build node
+# deploy stage, which requires a persistent/self-hosted Windows runner).
+self-hosted-runner:
+  labels:
+    - deploy

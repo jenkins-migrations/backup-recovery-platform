@@ -1,0 +1,112 @@
+# Migrated from: msbuilddotnet/Jenkinsfile
+# Original source: https://github.com/jenkinsci/pipeline-examples (MIT License)
+# Original pattern: MSBuild for .NET projects (scripted pipeline, single Windows node)
+name: MSBuild .NET
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  checks: write
+
+jobs:
+  build-test:
+    name: Build, Test & Archive
+    runs-on: windows-latest
+    steps:
+      # actions/checkout v4.2.2, pinned to commit SHA per security guardrails
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # NuGet/setup-nuget v2.0.1, pinned to commit SHA per security guardrails
+      # Replaces implicit Jenkins `nuget` CLI availability on the build node
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@323ab0502cd38fdc493335025a96c8fdb0edc71f # v2.0.1
+
+      # microsoft/setup-msbuild v2, pinned to commit SHA per security guardrails
+      # Replaces Jenkins `tool 'MSBuild'` reference
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce # v2
+
+      - name: Restore (nuget restore SolutionName.sln)
+        shell: cmd
+        run: nuget restore SolutionName.sln
+
+      - name: Build (MSBuild Release)
+        shell: cmd
+        run: msbuild SolutionName.sln /p:Configuration=Release /p:Platform="Any CPU" /p:ProductVersion=1.0.0.${{ github.run_number }}
+
+      # microsoft/vstest-action v1.0.0, pinned to commit SHA per security guardrails
+      # Replaces Jenkins `tool 'VSTest'` + manual vstest.console.exe invocation.
+      # Uploads .trx result logs as an artifact (resultLogsArtifactName below).
+      - name: Test (VSTest)
+        uses: microsoft/vstest-action@6ef4755ea07a3144e3da36f10d76187086eee5e6 # v1.0.0
+        with:
+          testAssembly: ProjectName.Tests.dll
+          searchFolder: ProjectName.Tests\bin\Release
+          resultLogsArtifactName: vstest-result-logs
+
+      # dorny/test-reporter v1.9.1, pinned to commit SHA per security guardrails
+      # Replaces Jenkins `publishTestResults testResultsPattern: '**/*.trx'`
+      - name: Publish test results
+        uses: dorny/test-reporter@31a54ee7ebcacc03a09ea97a7e5465a47b84aea5 # v1.9.1
+        if: always()
+        with:
+          name: VSTest Results
+          path: "**/*.trx"
+          reporter: dotnet-trx
+
+      # actions/upload-artifact v4.4.3, pinned to commit SHA per security guardrails
+      # Replaces Jenkins `archiveArtifacts artifacts: 'ProjectName/bin/Release/**/*', fingerprint: true`
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: build-output
+          path: ProjectName/bin/Release/**/*
+          if-no-files-found: warn
+
+      # Replaces Jenkins `publishHTML` step (HTML Publisher plugin has no direct
+      # GitHub Actions equivalent; the report is preserved as a downloadable artifact).
+      - name: Archive HTML build report
+        uses: actions/upload-artifact@b4b15b8c7c6ac21ea08fcf65892d2ee8f75cf882 # v4.4.3
+        with:
+          name: build-report
+          path: ProjectName/bin/Release/index.html
+          if-no-files-found: warn
+
+  deploy:
+    name: Deploy (master branch only)
+    needs: build-test
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    # NOTE: The original Jenkins 'Deploy' stage ran `xcopy` to a local filesystem
+    # path (C:\Deploy\ProjectName\) on the Jenkins build agent itself. This only
+    # makes sense on a persistent/self-hosted runner with access to that target
+    # path - GitHub-hosted runners are ephemeral and cannot satisfy this.
+    # This job therefore requires a self-hosted Windows runner labeled "deploy"
+    # and the deploy destination supplied via the DEPLOY_TARGET_PATH repository
+    # variable (see MIGRATION-README.md for required configuration).
+    runs-on: [self-hosted, windows, deploy]
+    steps:
+      # actions/checkout v4.2.2, pinned to commit SHA per security guardrails
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Each Actions job has an isolated filesystem. Fetch the preceding build
+      # job's archived output before copying it to the persistent target.
+      # actions/download-artifact v4.1.8, pinned to commit SHA per security guardrails
+      - name: Download build artifacts
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: build-output
+          path: deployment-source
+
+      - name: Deploy (xcopy to target path)
+        shell: cmd
+        env:
+          DEPLOY_TARGET_PATH: ${{ vars.DEPLOY_TARGET_PATH }}
+        run: xcopy deployment-source\* "%DEPLOY_TARGET_PATH%" /E /Y
