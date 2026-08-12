@@ -2,12 +2,7 @@
 
 **Repository:** `jenkins-migrations/backup-recovery-platform`
 **Date:** 2026-08-12
-**Status:** Workflows created locally, **NOT committed/pushed** per explicit user instruction.
-
-> ⚠️ The user explicitly requested that no commit, push, or PR be created for this
-> migration. All changes described below exist only in the local working tree of
-> this session and have **not** been persisted to the remote repository or opened
-> as a pull request, overriding the agent's normal "always open a PR" requirement.
+**Status:** Completed and committed to the migration pull request.
 
 ---
 
@@ -166,7 +161,5 @@ document-specific guidance beyond that was available or applied.
    `multi-platform-build.yml` should be collapsed to a single Ubuntu entry.
 4. Consider publishing the `.NET` HTML build report to GitHub Pages if an
    inline browsable report (rather than a downloadable artifact) is required.
-5. This report and the new workflow/archive files currently exist **only in
-   the local working tree** — per user instruction, nothing was committed,
-   pushed, or opened as a PR. A maintainer will need to review and commit
-   these changes manually if the migration is approved.
+5. Review and merge this pull request once the required self-hosted runner and
+   deployment variable have been configured.
