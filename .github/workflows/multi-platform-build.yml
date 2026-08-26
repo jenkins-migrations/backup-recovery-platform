@@ -1,0 +1,80 @@
+name: Multi-Platform Build
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build on ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Precise represented Ubuntu 12.04; this uses the older currently supported GitHub-hosted LTS runner as an approximation.
+          - platform: precise
+            os: ubuntu-22.04
+          # Trusty represented Ubuntu 14.04; this uses the newer currently supported GitHub-hosted LTS runner as an approximation.
+          - platform: trusty
+            os: ubuntu-24.04
+          - platform: windows
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        # actions/checkout v4 pinned to the current v4 tag commit.
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Build (Unix)
+        shell: bash
+        if: runner.os != 'Windows'
+        run: |
+          if [ -f Makefile ] || [ -f makefile ]; then
+            make
+          else
+            echo "No Makefile found; skipping Unix build."
+          fi
+
+      - name: Build (Windows)
+        shell: pwsh
+        if: runner.os == 'Windows'
+        run: |
+          if (Test-Path 'build.bat') {
+            ./build.bat
+          } else {
+            Write-Host 'No build.bat found; skipping Windows build.'
+          }
+
+      - name: Test (Unix)
+        shell: bash
+        if: runner.os != 'Windows'
+        run: |
+          if [ -f Makefile ] || [ -f makefile ]; then
+            make test
+          else
+            echo "No Makefile found; skipping Unix tests."
+          fi
+
+      - name: Test (Windows)
+        shell: pwsh
+        if: runner.os == 'Windows'
+        run: |
+          if (Test-Path 'test.bat') {
+            ./test.bat
+          } else {
+            Write-Host 'No test.bat found; skipping Windows tests.'
+          }
+
+      - name: Archive build artifacts
+        # actions/upload-artifact v4 pinned to the current v4 tag commit.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: build-${{ matrix.platform }}
+          path: build/**
+          if-no-files-found: ignore
