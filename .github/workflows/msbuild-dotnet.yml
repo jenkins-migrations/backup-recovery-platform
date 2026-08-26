@@ -64,7 +64,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Archive build artifacts
-        if: hashFiles('ProjectName/bin/Release/**') != ''
+        if: github.ref != 'refs/heads/master' && hashFiles('ProjectName/bin/Release/**') != ''
         # actions/upload-artifact v4 pinned to the current v4 tag commit.
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

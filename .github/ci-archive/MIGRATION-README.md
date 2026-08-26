@@ -16,7 +16,7 @@ Migrated the repository's Jenkins pipeline definitions to GitHub Actions workflo
 ### Multi-Platform Build
 
 - Jenkins node labels `precise`, `trusty`, and `windows` were converted to a GitHub Actions platform matrix.
-- The historical Ubuntu labels run on `ubuntu-latest`; the Windows label runs on `windows-latest`.
+- The historical Ubuntu labels are approximated with supported GitHub-hosted runners: `precise` runs on `ubuntu-22.04`, `trusty` runs on `ubuntu-24.04`, and `windows` runs on `windows-latest`.
 - Jenkins `checkout scm` maps to `actions/checkout`.
 - Jenkins `sh 'make'` and `sh 'make test'` map to Bash steps on Linux runners.
 - Jenkins `bat 'build.bat'` and `bat 'test.bat'` map to PowerShell steps on Windows runners.
@@ -28,7 +28,7 @@ Migrated the repository's Jenkins pipeline definitions to GitHub Actions workflo
 - Jenkins `nuget restore SolutionName.sln` maps to a NuGet restore step after `NuGet/setup-nuget`.
 - Jenkins MSBuild tool usage maps to `microsoft/setup-msbuild` and an `msbuild` command using `github.run_number` in place of `env.BUILD_NUMBER`.
 - Jenkins VSTest usage maps to `vstest.console.exe` and TRX artifact upload when results exist.
-- Jenkins artifact and HTML report publishing map to `actions/upload-artifact` when files exist.
+- Jenkins artifact and HTML report publishing map to `actions/upload-artifact` when files exist; the full release artifact is uploaded on non-master branches, while master publishes the same build output as the deployment package to avoid duplicate artifacts.
 - Jenkins `branch 'master'` deploy condition maps to a master-only deployment package artifact because GitHub-hosted runner filesystems are ephemeral and no external deployment target was defined in Jenkins.
 
 ## Archived Files

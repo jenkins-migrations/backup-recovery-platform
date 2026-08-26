@@ -17,9 +17,9 @@ jobs:
       matrix:
         include:
           - platform: precise
-            os: ubuntu-latest
+            os: ubuntu-22.04
           - platform: trusty
-            os: ubuntu-latest
+            os: ubuntu-24.04
           - platform: windows
             os: windows-latest
     runs-on: ${{ matrix.os }}
