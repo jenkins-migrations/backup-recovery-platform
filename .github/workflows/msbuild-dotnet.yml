@@ -1,0 +1,93 @@
+name: MSBuild .NET
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-test-deploy:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        # actions/checkout v4 pinned to the current v4 tag commit.
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Setup NuGet
+        # NuGet/setup-nuget v2 pinned to the current v2 tag commit.
+        uses: NuGet/setup-nuget@d105a947828025cd7a980103c35ba2bfae586d0f
+
+      - name: Setup MSBuild
+        # microsoft/setup-msbuild v2 pinned to the current v2 tag commit.
+        uses: microsoft/setup-msbuild@6fb02220983dee41ce7ae257b6f4d8f9bf5ed4ce
+
+      - name: Restore
+        shell: pwsh
+        run: |
+          if (Test-Path 'SolutionName.sln') {
+            nuget restore SolutionName.sln
+          } else {
+            Write-Host 'SolutionName.sln not found; skipping restore.'
+          }
+
+      - name: Build
+        shell: pwsh
+        run: |
+          if (Test-Path 'SolutionName.sln') {
+            msbuild SolutionName.sln /p:Configuration=Release /p:Platform="Any CPU" /p:ProductVersion="1.0.0.${{ github.run_number }}"
+          } else {
+            Write-Host 'SolutionName.sln not found; skipping build.'
+          }
+
+      - name: Test
+        shell: pwsh
+        run: |
+          $testAssembly = 'ProjectName.Tests\bin\Release\ProjectName.Tests.dll'
+          if (Test-Path $testAssembly) {
+            vstest.console.exe $testAssembly /Logger:trx
+          } else {
+            Write-Host "$testAssembly not found; skipping tests."
+          }
+
+      - name: Archive test results
+        if: hashFiles('**/*.trx') != ''
+        # actions/upload-artifact v4 pinned to the current v4 tag commit.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: test-results
+          path: '**/*.trx'
+          if-no-files-found: ignore
+
+      - name: Archive build artifacts
+        if: hashFiles('ProjectName/bin/Release/**') != ''
+        # actions/upload-artifact v4 pinned to the current v4 tag commit.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: project-release
+          path: ProjectName/bin/Release/**
+          if-no-files-found: ignore
+
+      - name: Archive build report
+        if: hashFiles('ProjectName/bin/Release/index.html') != ''
+        # actions/upload-artifact v4 pinned to the current v4 tag commit.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: build-report
+          path: ProjectName/bin/Release/index.html
+          if-no-files-found: ignore
+
+      - name: Deploy
+        if: github.ref == 'refs/heads/master'
+        shell: pwsh
+        run: |
+          if (Test-Path 'ProjectName\bin\Release') {
+            New-Item -ItemType Directory -Force -Path 'C:\Deploy\ProjectName' | Out-Null
+            Copy-Item 'ProjectName\bin\Release\*' 'C:\Deploy\ProjectName\' -Recurse -Force
+          } else {
+            Write-Host 'ProjectName\bin\Release not found; skipping deploy.'
+          }

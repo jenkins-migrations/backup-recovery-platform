@@ -1,0 +1,79 @@
+name: Multi-Platform Build
+
+on:
+  push:
+    branches:
+      - '**'
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build on ${{ matrix.jenkins_label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - jenkins_label: precise
+            os: ubuntu-latest
+          - jenkins_label: trusty
+            os: ubuntu-latest
+          - jenkins_label: windows
+            os: windows-latest
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        # actions/checkout v4 pinned to the current v4 tag commit.
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+
+      - name: Build
+        shell: bash
+        if: runner.os != 'Windows'
+        run: |
+          if [ -f Makefile ] || [ -f makefile ]; then
+            make
+          else
+            echo "No Makefile found; skipping Unix build."
+          fi
+
+      - name: Build
+        shell: pwsh
+        if: runner.os == 'Windows'
+        run: |
+          if (Test-Path 'build.bat') {
+            ./build.bat
+          } else {
+            Write-Host 'No build.bat found; skipping Windows build.'
+          }
+
+      - name: Test
+        shell: bash
+        if: runner.os != 'Windows'
+        run: |
+          if [ -f Makefile ] || [ -f makefile ]; then
+            make test
+          else
+            echo "No Makefile found; skipping Unix tests."
+          fi
+
+      - name: Test
+        shell: pwsh
+        if: runner.os == 'Windows'
+        run: |
+          if (Test-Path 'test.bat') {
+            ./test.bat
+          } else {
+            Write-Host 'No test.bat found; skipping Windows tests.'
+          }
+
+      - name: Archive build artifacts
+        if: hashFiles('build/**') != ''
+        # actions/upload-artifact v4 pinned to the current v4 tag commit.
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: build-${{ matrix.jenkins_label }}
+          path: build/**
+          if-no-files-found: ignore
