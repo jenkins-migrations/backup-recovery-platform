@@ -16,7 +16,7 @@ Migrated the repository's Jenkins pipeline definitions to GitHub Actions workflo
 ### Multi-Platform Build
 
 - Jenkins node labels `precise`, `trusty`, and `windows` were converted to a GitHub Actions platform matrix.
-- The historical Ubuntu labels are approximated with supported GitHub-hosted runners: `precise` runs on `ubuntu-22.04`, `trusty` runs on `ubuntu-24.04`, and `windows` runs on `windows-latest`.
+- The historical Ubuntu labels are approximated with supported GitHub-hosted runners: `precise` runs on `ubuntu-22.04`, `trusty` runs on `ubuntu-24.04`, and `windows` runs on `windows-latest`. The original Ubuntu 12.04/14.04 environments are no longer available as GitHub-hosted runners, so the migration uses two maintained Ubuntu LTS images to preserve separate Linux matrix coverage.
 - Jenkins `checkout scm` maps to `actions/checkout`.
 - Jenkins `sh 'make'` and `sh 'make test'` map to Bash steps on Linux runners.
 - Jenkins `bat 'build.bat'` and `bat 'test.bat'` map to PowerShell steps on Windows runners.
