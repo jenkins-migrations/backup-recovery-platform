@@ -81,6 +81,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Publish deployment package
+        # Jenkins only deployed from its default branch; feature branches keep the build artifact instead.
         if: github.ref == 'refs/heads/main'
         # actions/upload-artifact v4 pinned to the current v4 tag commit.
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

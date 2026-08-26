@@ -16,10 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Precise is the older Jenkins Ubuntu label, so it maps to the older supported GitHub-hosted LTS runner.
+          # Precise represented Ubuntu 12.04; this uses the older currently supported GitHub-hosted LTS runner as an approximation.
           - platform: precise
             os: ubuntu-22.04
-          # Trusty is the newer Jenkins Ubuntu label, so it maps to the newer supported GitHub-hosted LTS runner.
+          # Trusty represented Ubuntu 14.04; this uses the newer currently supported GitHub-hosted LTS runner as an approximation.
           - platform: trusty
             os: ubuntu-24.04
           - platform: windows
