@@ -11,16 +11,16 @@ permissions:
 
 jobs:
   build:
-    name: Build on ${{ matrix.jenkins_label }}
+    name: Build on ${{ matrix.platform }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - jenkins_label: precise
+          - platform: precise
             os: ubuntu-latest
-          - jenkins_label: trusty
+          - platform: trusty
             os: ubuntu-latest
-          - jenkins_label: windows
+          - platform: windows
             os: windows-latest
     runs-on: ${{ matrix.os }}
 
@@ -29,7 +29,7 @@ jobs:
         # actions/checkout v4 pinned to the current v4 tag commit.
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
 
-      - name: Build
+      - name: Build (Unix)
         shell: bash
         if: runner.os != 'Windows'
         run: |
@@ -39,7 +39,7 @@ jobs:
             echo "No Makefile found; skipping Unix build."
           fi
 
-      - name: Build
+      - name: Build (Windows)
         shell: pwsh
         if: runner.os == 'Windows'
         run: |
@@ -49,7 +49,7 @@ jobs:
             Write-Host 'No build.bat found; skipping Windows build.'
           }
 
-      - name: Test
+      - name: Test (Unix)
         shell: bash
         if: runner.os != 'Windows'
         run: |
@@ -59,7 +59,7 @@ jobs:
             echo "No Makefile found; skipping Unix tests."
           fi
 
-      - name: Test
+      - name: Test (Windows)
         shell: pwsh
         if: runner.os == 'Windows'
         run: |
@@ -74,6 +74,6 @@ jobs:
         # actions/upload-artifact v4 pinned to the current v4 tag commit.
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: build-${{ matrix.jenkins_label }}
+          name: build-${{ matrix.platform }}
           path: build/**
           if-no-files-found: ignore
