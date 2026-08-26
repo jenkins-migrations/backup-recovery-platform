@@ -16,8 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Precise is the older Jenkins Ubuntu label, so it maps to the older supported GitHub-hosted LTS runner.
           - platform: precise
             os: ubuntu-22.04
+          # Trusty is the newer Jenkins Ubuntu label, so it maps to the newer supported GitHub-hosted LTS runner.
           - platform: trusty
             os: ubuntu-24.04
           - platform: windows
@@ -70,7 +72,6 @@ jobs:
           }
 
       - name: Archive build artifacts
-        if: hashFiles('build/**') != ''
         # actions/upload-artifact v4 pinned to the current v4 tag commit.
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
